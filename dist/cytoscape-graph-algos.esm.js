@@ -365,12 +365,137 @@ function pathsFromTo(sources, targets, k, d, mod) {
   };
 }
 
+/*
+	Implementation of Common Stream algorithm, this algorithm finds all common nodes which are reachable
+	all source nodes within given limit.
+	sources: source nodes
+	k: limit
+	direction: direction of algorithm ( DOWNSTREAM( only outgoing edges), UPSTREAM( only incoming edges), BOTHSTREAM( all edges) )
+*/
+function reverseDirection$1(direction) {
+  if (direction === "BOTHSTREAM") return direction;
+  if (direction === "UPSTREAM") return "DOWNSTREAM";
+  if (direction === "DOWNSTREAM") return "UPSTREAM";
+}
+
+function commonStreamNodeGroups(sourceNodesArray, k, direction) {
+  var cy = this.cy();
+  var eles = this;
+  var count = {};
+  var candidates = [];
+  var commonNodes = cy.collection();
+  var nodesOnPath = cy.collection();
+  var edgesOnPath = cy.collection();
+  var distancesFrom = {};
+  var visitSources = {};
+  var inCallingCollection = {};
+
+  for (var j = 0; j < sourceNodesArray.length; j++) {
+    for (var i = 0; i < sourceNodesArray[j].length; i++) {
+      visitSources[sourceNodes[j][i].id()] = true;
+    }
+  }
+
+  for (var _i = 0; _i < eles.length; _i++) {
+    inCallingCollection[eles[_i].id()] = true;
+  }
+
+  for (var _i2 = 0; _i2 < sourceNodesArray.length; _i2++) {
+    // find neighbors for each node in a group of nodes
+    var neighborNodes = cy.collection();
+    var neighborEdges = cy.collection();
+    var dist = {};
+
+    for (var _j = 0; _j < sourceNodesArray[_i2].length; _j++) {
+      var neighborBFS = this.compoundBFS(sourceNodes[_i2][_j], k, direction);
+      neighborNodes.merge(neighborBFS.neighborNodes);
+      neighborEdges.merge(neighborBFS.neighborEdges);
+      if (dist.length == 0) dist = neighborBFS.distances;else {
+        for (var _i3 = 0; _i3 < dist.length; _i3++) {
+          if (neighborBFS.distances[_i3] < dist[_i3]) {
+            dist[_i3] = neighborBFS.distances[_i3];
+          }
+        }
+      }
+    }
+
+    for (var _j2 = 0; _j2 < neighborNodes.length; _j2++) {
+      if (count[neighborNodes[_j2].id()] === undefined) {
+        count[neighborNodes[_j2].id()] = 1;
+        distancesFrom[neighborNodes[_j2].id()] = dist[neighborNodes[_j2].id()];
+        candidates.push(neighborNodes[_j2]);
+      } else {
+        count[neighborNodes[_j2].id()]++;
+        if (distancesFrom[neighborNodes[_j2].id()] > dist[neighborNodes[_j2].id()]) distancesFrom[neighborNodes[_j2].id()] = dist[neighborNodes[_j2].id()];
+      }
+    }
+
+    for (var _j3 = 0; _j3 < neighborEdges.length; _j3++) {
+      if (count[neighborEdges[_j3].id()] === undefined) {
+        count[neighborEdges[_j3].id()] = 1;
+      } else count[neighborEdges[_j3].id()]++;
+    }
+  } //find common nodes
+
+
+  while (candidates.length !== 0) {
+    var candidate = candidates.pop();
+
+    if (count[candidate.id()] === sourceNodes.length) {
+      if (candidate.isNode()) {
+        commonNodes.merge(candidate);
+        if (visitSources[candidate.id()] === true) continue;
+        visitSources[candidate.id()] = true;
+      }
+    }
+  } //find paths from source nodes to common nodes and highlight
+
+
+  var compoundBFS = this.compoundBFS(commonNodes, k, reverseDirection$1(direction));
+  var allEdges = cy.edges();
+  var allNodes = cy.nodes();
+  var neighborNodes = compoundBFS.commonNodes;
+  var neighborEdges = compoundBFS.commonEdges;
+  var distancesTo = compoundBFS.distances;
+
+  for (var _i4 = 0; _i4 < allNodes.length; _i4++) {
+    // find nodes
+    var nodeId = allNodes[_i4].id();
+
+    if (distancesFrom[nodeId] !== undefined && distancesTo[nodeId] !== undefined && distancesFrom[nodeId] + distancesTo[nodeId] <= k) {
+      if (visitSources[nodeId] === true) continue;
+      nodesOnPath.merge(allNodes[_i4]);
+      visitSources[nodeId] = true;
+    }
+  }
+
+  for (var _i5 = 0; _i5 < allEdges.length; _i5++) {
+    // find edges
+    var sourceId = allEdges[_i5].source().id();
+
+    var targetId = allEdges[_i5].target().id();
+
+    if (inCallingCollection[allEdges[_i5].id()] !== true) continue;
+
+    if (visitSources[sourceId] === true && visitSources[targetId] === true) {
+      edgesOnPath.merge(allEdges[_i5]);
+    }
+  }
+
+  return {
+    commonNodes: commonNodes,
+    nodesOnPath: nodesOnPath,
+    edgesOnPath: edgesOnPath
+  };
+}
+
 function register(cytoscape) {
   cytoscape('collection', 'kNeighborhood', kNeighborhood);
   cytoscape('collection', 'compoundBFS', compoundBFS);
   cytoscape('collection', 'commonStream', commonStream);
   cytoscape('collection', 'pathsBetween', pathsBetween);
   cytoscape('collection', 'pathsFromTo', pathsFromTo);
+  cytoscape('collection', 'commonStreamNodeGroups', commonStreamNodeGroups);
 }
 
 if (typeof cytoscape !== 'undefined') {
