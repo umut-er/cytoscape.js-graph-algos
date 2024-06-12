@@ -28,7 +28,7 @@ export function commonStreamNodeGroups(sourceNodesArray, k, direction) {
 	var inCallingCollection = {};
     for(let j = 0; j < sourceNodesArray.length; j++){
         for (let i = 0; i < sourceNodesArray[j].length; i++){
-            visitSources[sourceNodes[j][i].id()] = true;
+            visitSources[sourceNodesArray[j][i].id()] = true;
         }
     }
     for( let i = 0; i < eles.length; i++){
@@ -41,7 +41,7 @@ export function commonStreamNodeGroups(sourceNodesArray, k, direction) {
         var neighborEdges = cy.collection();
         var dist = {};
         for (let j = 0; j < sourceNodesArray[i].length; j++){
-            let neighborBFS = this.compoundBFS(sourceNodes[i][j], k, direction);
+            let neighborBFS = this.compoundBFS(sourceNodesArray[i][j], k, direction);
             neighborNodes.merge(neighborBFS.neighborNodes)
             neighborEdges.merge(neighborBFS.neighborEdges)
             if(dist.length == 0)
@@ -77,7 +77,7 @@ export function commonStreamNodeGroups(sourceNodesArray, k, direction) {
 	//find common nodes
 	while (candidates.length !== 0) {
 		var candidate = candidates.pop();
-		if (count[candidate.id()] === sourceNodes.length) {
+		if (count[candidate.id()] === sourceNodesArray.length) {
 			if (candidate.isNode()) {
 				commonNodes.merge(candidate);
 				if (visitSources[candidate.id()] === true)

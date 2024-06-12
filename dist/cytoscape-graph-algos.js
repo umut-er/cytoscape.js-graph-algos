@@ -398,7 +398,7 @@
 
 	  for (var j = 0; j < sourceNodesArray.length; j++) {
 	    for (var i = 0; i < sourceNodesArray[j].length; i++) {
-	      visitSources[sourceNodes[j][i].id()] = true;
+	      visitSources[sourceNodesArray[j][i].id()] = true;
 	    }
 	  }
 
@@ -413,7 +413,7 @@
 	    var dist = {};
 
 	    for (var _j = 0; _j < sourceNodesArray[_i2].length; _j++) {
-	      var neighborBFS = this.compoundBFS(sourceNodes[_i2][_j], k, direction);
+	      var neighborBFS = this.compoundBFS(sourceNodesArray[_i2][_j], k, direction);
 	      neighborNodes.merge(neighborBFS.neighborNodes);
 	      neighborEdges.merge(neighborBFS.neighborEdges);
 	      if (dist.length == 0) dist = neighborBFS.distances;else {
@@ -447,7 +447,7 @@
 	  while (candidates.length !== 0) {
 	    var candidate = candidates.pop();
 
-	    if (count[candidate.id()] === sourceNodes.length) {
+	    if (count[candidate.id()] === sourceNodesArray.length) {
 	      if (candidate.isNode()) {
 	        commonNodes.merge(candidate);
 	        if (visitSources[candidate.id()] === true) continue;
